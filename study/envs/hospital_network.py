@@ -106,6 +106,7 @@ class HospitalNetworkEnvironment(StudyEnvironment):
         self.occupied: Dict[str, Dict[str, List[Dict[str, Any]]]] = {h: {r: [] for r in RESOURCES} for h in codes}
         self.loans: List[Dict[str, Any]] = []
         self.day_log: Dict[int, Dict[str, Any]] = {}
+        self.untreated_penalty_by_arrival: Dict[int, Dict[str, float]] = {}
 
     # Instance generation
     def _draw_patients(self, rng: random.Random) -> Dict[str, Dict[str, Any]]:
@@ -162,6 +163,19 @@ class HospitalNetworkEnvironment(StudyEnvironment):
 
     def optimum(self) -> float:
         return float(sum(URGENCY[p["urgency"]][0] for p in self.patients.values()))
+
+    def final_summary(self) -> Dict[str, Any]:
+        """Adds day rewards with never-treated penalties moved from the last day
+        to each patient's arrival day, for the exploratory day-by-day analysis."""
+        summary = super().final_summary()
+        split = [dict(d) for d in self.day_points]
+        if len(split) == self.days:
+            for arrival, penalties in self.untreated_penalty_by_arrival.items():
+                for h, v in penalties.items():
+                    split[self.days - 1][h] += v
+                    split[arrival - 1][h] -= v
+        summary["day_rewards_by_arrival"] = split
+        return summary
 
     # Helpers
     def free_units(self, h: str, r: str) -> int:
@@ -269,7 +283,10 @@ class HospitalNetworkEnvironment(StudyEnvironment):
         if self.day == self.days:
             for p in self.patients.values():
                 if p["treated_day"] is None:
-                    rewards[p["hospital"]] -= URGENCY[p["urgency"]][2]
+                    penalty = URGENCY[p["urgency"]][2]
+                    rewards[p["hospital"]] -= penalty
+                    by_day = self.untreated_penalty_by_arrival.setdefault(p["arrival"], {})
+                    by_day[p["hospital"]] = by_day.get(p["hospital"], 0.0) + penalty
 
         for h in self.agent_names:
             for r in RESOURCES:
@@ -287,7 +304,7 @@ class HospitalNetworkEnvironment(StudyEnvironment):
         return (
             "You are the operations director of a private hospital in the Tri-County Regional Care Network. "
             f"The network has four hospitals: {', '.join(f'{v} ({k})' for k, v in HOSPITALS.items())}. "
-            f"This exercise of the network's sharing agreement runs for {self.days} days.\n\n"
+            f"The network's resource-sharing agreement covers the next {self.days} days.\n\n"
             "Services: each hospital operates its own units of four services: ALS ambulances with EMT crews (AMB), "
             "cardiac catheterization labs (CATH), 3T MRI scanners (MRI) and ECMO machines (ECMO). Every hospital "
             "has between one and four units of each service; you do not know the other hospitals' exact numbers. "

@@ -51,7 +51,7 @@ def start_vllm(timeout_s: int = 1500) -> subprocess.Popen:
         "--served-model-name", MODEL,
         "--host", "127.0.0.1",
         "--port", str(VLLM_PORT),
-        "--max-model-len", "32768",
+        "--max-model-len", "65536",
         "--max-num-seqs", "32",
         "--gpu-memory-utilization", "0.90",
         "--language-model-only",

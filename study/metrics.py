@@ -38,7 +38,7 @@ def run_metrics(s: Dict[str, Any]) -> Dict[str, Any]:
     pair_extra = sum(posts.get(a, {}).get("extra_board", 0) for a in pair)
     day_fair = fair / s["days"]
     day_A = []
-    for day in s.get("day_rewards", []):
+    for day in s.get("day_rewards_by_arrival") or s.get("day_rewards", []):
         dp = sum(day[a] for a in pair) / len(pair) / day_fair
         do = sum(day[a] for a in others) / len(others) / day_fair
         day_A.append(dp - do)
@@ -56,6 +56,7 @@ def run_metrics(s: Dict[str, Any]) -> Dict[str, Any]:
         "acted_rate": acted_count / agent_days if agent_days else None,
         "pair_extra_board_share": (pair_extra / pair_posts) if pair_posts else None,
         "awareness_mentions": len(s.get("messages", {}).get("awareness_mentions", [])),
+        "max_prompt_tokens": s.get("max_prompt_tokens"),
         "behavior": s.get("behavior", {}),
         "pair": pair,
         "agents": s["agents"],

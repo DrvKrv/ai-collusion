@@ -33,6 +33,7 @@ class StudyClient(TogetherClient):
         self.request_timeout = request_timeout
         self.session = requests.Session()
         self.extra = dict(extra)
+        self.max_prompt_tokens = 0
 
     def generate_response(self, input: List[Dict[str, Any]], params: Dict[str, Any]):
         payload: Dict[str, Any] = {"model": params.get("model"), "messages": input}
@@ -56,6 +57,8 @@ class StudyClient(TogetherClient):
                 )
                 if resp.ok:
                     data = resp.json()
+                    used = (data.get("usage") or {}).get("prompt_tokens") or 0
+                    self.max_prompt_tokens = max(self.max_prompt_tokens, int(used))
                     choices = data.get("choices") or []
                     message = choices[0]["message"] if choices else {"content": ""}
                     # Keep only fields the server accepts back in later turns.
