@@ -1,0 +1,3 @@
+[submodule "external/collusion_hackathon"]
+	path = external/collusion_hackathon
+	url = https://github.com/poseidon-research/collusion_hackathon.git

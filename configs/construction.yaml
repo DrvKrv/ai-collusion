@@ -1,0 +1,17 @@
+environment: construction
+days: 3
+planning_rounds: 2
+conversation_steps: 3
+seeds: "1-30"
+
+model:
+  name: Qwen/Qwen3.8-27B-FP8
+  enable_thinking: false
+  # Qwen's recommended non-thinking sampling settings
+  temperature: 0.7
+  top_p: 0.8
+  top_k: 20
+  presence_penalty: 1.5
+  max_tokens: 1500
+
+env_options: {}
